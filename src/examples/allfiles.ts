@@ -43,6 +43,23 @@ const doWork = async () => {
 
   // run through all of the pages and process them
   for (const page of figmaCalculator.getAllPages()) {
+    const designWithDevStatus = page.children.filter((item) => {
+      if ("devStatus" in item && item.devStatus?.type === "READY_FOR_DEV") {
+        return item;
+      }
+    });
+
+    if (!designWithDevStatus.length) {
+      console.log(`Skipping page ${page.name} - no dev-ready items`);
+      continue;
+    }
+
+    const filteredPage = {
+      ...page,
+      children: designWithDevStatus,
+    };
+
+    console.log(`Processing page ${page.name} with ${designWithDevStatus.length} dev-ready items`);
     const processedNodes = figmaCalculator.processTree(page, {
       onProcessNode: (node) => {
         for (const check of node.lintChecks) {
