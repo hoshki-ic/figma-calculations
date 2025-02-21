@@ -7,10 +7,28 @@ import { FIGMA_TOKEN } from "./token";
 const figmaCalculator = new FigmaCalculator();
 
 const STYLE_TEAM_ID = "740326391796487610";
-const TEAM_IDS = ["740326391796487610"];
+const TEAM_IDS = ["1080294811112632949"];
+const onlyDevStatus = true; // Toggle this to enable/disable dev status filtering
 
 // used to fetch styles and components
 figmaCalculator.setAPIToken(FIGMA_TOKEN);
+
+const getLibraryComponentAdoption = (aggregates: any) => {
+  let totalNodes = 0;
+  let libraryNodes = 0;
+
+  for (const counts of aggregates) {
+    const { totalNodes: total, libraryNodes: library, hiddenNodes, ignoredNodes } = counts;
+    totalNodes += total - hiddenNodes - ignoredNodes;
+    libraryNodes += library;
+  }
+
+  return {
+    total: totalNodes,
+    library: libraryNodes,
+    percentage: Math.ceil((libraryNodes / totalNodes) * 10000) / 100,
+  };
+};
 
 const doWork = async () => {
   // optional: if not in figma plugin environment, load a file with this
@@ -29,64 +47,72 @@ const doWork = async () => {
 
   console.log("Total File Count:", files.length);
 
-  // for (let i = 0; i < files.length; i++) {
-  const file = files[4];
-  console.log(file.name);
-  try {
-    await figmaCalculator.fetchCloudDocument(file.key);
-  } catch (ex) {
-    console.log(`Failed to fetch ${file.key}`);
-    return;
-  }
-
-  console.log(`Processing file`);
-
-  // run through all of the pages and process them
-  for (const page of figmaCalculator.getAllPages()) {
-    const designWithDevStatus = page.children.filter((item) => {
-      if ("devStatus" in item && item.devStatus?.type === "READY_FOR_DEV") {
-        return item;
-      }
-    });
-
-    if (!designWithDevStatus.length) {
-      console.log(`Skipping page ${page.name} - no dev-ready items`);
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    console.log("File Name: " + file.name);
+    try {
+      await figmaCalculator.fetchCloudDocument(file.key);
+    } catch (ex) {
+      console.log(`Failed to fetch ${file.key}`);
       continue;
     }
 
-    const filteredPage = {
-      ...page,
-      children: designWithDevStatus,
-    };
+    console.log(`Processing file`);
 
-    console.log(`Processing page ${page.name} with ${designWithDevStatus.length} dev-ready items`);
-    const processedNodes = figmaCalculator.processTree(page, {
-      onProcessNode: (node) => {
-        for (const check of node.lintChecks) {
-          // example: show the text linting results and suggestions
-          if (check.checkName === "Text-Style" && check.matchLevel === "Partial") {
-            // console.log(check.suggestions);
+    // run through all of the pages and process them
+    for (const page of figmaCalculator.getAllPages()) {
+      let pageToProcess = page;
+
+      if (onlyDevStatus) {
+        const designWithDevStatus = page.children.filter((item) => {
+          if ("devStatus" in item && item.devStatus?.type === "READY_FOR_DEV") {
+            return item;
           }
+        });
+
+        if (!designWithDevStatus.length) {
+          console.log(`Skipping page ${page.name} - no dev-ready items`);
+          continue;
         }
-      },
-    });
 
-    const pageDetails: ProcessedPage = {
-      file,
-      pageAggregates: processedNodes.aggregateCounts,
-      pageName: page.name,
-    };
-    allPages.push(pageDetails);
+        pageToProcess = {
+          ...page,
+          children: designWithDevStatus,
+        };
+        console.log(`Processing page ${page.name} with ${designWithDevStatus.length} dev-ready items`);
+      }
+
+      const processedNodes = figmaCalculator.processTree(pageToProcess, {
+        onProcessNode: (node) => {
+          for (const check of node.lintChecks) {
+            // example: show the text linting results and suggestions
+            if (check.checkName === "Text-Style" && check.matchLevel === "Partial") {
+              // console.log(check.suggestions);
+            }
+          }
+        },
+      });
+
+      const pageDetails: ProcessedPage = {
+        file,
+        pageAggregates: processedNodes.aggregateCounts,
+        pageName: page.name,
+      };
+      allPages.push(pageDetails);
+    }
   }
-  // }
-
-  // write all pages to disk in case something goes wrong, so we don't have to reload everything again
-  const json = JSON.stringify(allPages, null, 2);
-  //const fileName = `./all-pages.json`;
-  //fs.writeFileSync(fileName, json);
 
   const teamBreakdown = figmaCalculator.getBreakDownByTeams(allPages);
-  console.log(JSON.stringify(teamBreakdown));
+
+  // Calculate library component adoption for all pages
+  const libraryAdoption = getLibraryComponentAdoption(allPages.map((page) => page.pageAggregates));
+
+  console.log("Library Component Adoption:", {
+    totalNodes: libraryAdoption.total,
+    libraryNodes: libraryAdoption.library,
+    percentage: libraryAdoption.percentage + "%",
+  });
+  console.log("Team Breakdown:", JSON.stringify(teamBreakdown, null, 2));
 };
 
 doWork();
