@@ -36,11 +36,7 @@ import {
 import LintCleaner from "./rules/cleaners";
 
 import { makePercent } from "./utils/percent";
-import {
-  getLintCheckPercent,
-  getProcessedNodes,
-  ProcessedNodeOptions,
-} from "./utils/process";
+import { getLintCheckPercent, getProcessedNodes, ProcessedNodeOptions } from "./utils/process";
 import { getFigmaPagesForTeam } from "./utils/teams";
 import {
   createHexColorToVariableMap,
@@ -88,6 +84,8 @@ export class FigmaCalculator extends FigmaDocumentParser {
    * @returns
    */
   async fetchCloudDocument(fileKey: string): Promise<FigmaFile> {
+    // const devResources = await FigmaAPIHelper.getDevResources(fileKey);
+    // console.log({ devResources });
     const file = await FigmaAPIHelper.getFile(fileKey);
     const { document, styles, components, componentSets } = file;
 
@@ -107,9 +105,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
       // to-do: replace all of the "componentIDs" with the actual component key or frame name
 
       if (cloudNode.componentId) {
-        const componentKey =
-          components[cloudNode.componentId]?.key ||
-          componentSets[cloudNode.componentId]?.key;
+        const componentKey = components[cloudNode.componentId]?.key || componentSets[cloudNode.componentId]?.key;
 
         if (componentKey) {
           cloudNode.componentId = componentKey;
@@ -134,10 +130,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
    * @param teamId - the team to load components from
    * @param {filterPrefixes} - an array of strings to throw out the components by
    */
-  async loadComponents(
-    teamId: string,
-    opts?: { filterPrefixes: string[] }
-  ): Promise<FigmaTeamComponent[]> {
+  async loadComponents(teamId: string, opts?: { filterPrefixes: string[] }): Promise<FigmaTeamComponent[]> {
     if (!this.apiToken) throw new Error("No Figma API token provided");
     const teamComponents = await FigmaAPIHelper.getTeamComponents(teamId);
 
@@ -154,14 +147,10 @@ export class FigmaCalculator extends FigmaDocumentParser {
         // Assuming we don't explicitly export components with an = signs in the name
         if (comp.name.includes("=")) {
           return opts.filterPrefixes.some((prefix) =>
-            comp.containing_frame.name
-              .toLowerCase()
-              .startsWith(prefix.toLowerCase())
+            comp.containing_frame.name.toLowerCase().startsWith(prefix.toLowerCase())
           );
         } else {
-          return opts.filterPrefixes.some((prefix) =>
-            comp.name.toLowerCase().startsWith(prefix.toLowerCase())
-          );
+          return opts.filterPrefixes.some((prefix) => comp.name.toLowerCase().startsWith(prefix.toLowerCase()));
         }
       });
     }
@@ -191,10 +180,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
     // Merge the variables and variable collections with any previously loaded ones
     Object.assign(this.localVariables, localVariables.variables);
-    Object.assign(
-      this.localVariableCollections,
-      localVariables.variableCollections
-    );
+    Object.assign(this.localVariableCollections, localVariables.variableCollections);
 
     return localVariables;
   }
@@ -207,16 +193,11 @@ export class FigmaCalculator extends FigmaDocumentParser {
     variables: Record<string, FigmaPublishedVariable>;
     variableCollections: Record<string, FigmaPublishedVariableCollection>;
   }> {
-    const publishedVariables = await FigmaAPIHelper.getFilePublishedVariables(
-      fileKey
-    );
+    const publishedVariables = await FigmaAPIHelper.getFilePublishedVariables(fileKey);
 
     // Merge the variables and variable collections with any previously loaded ones
     Object.assign(this.publishedVariables, publishedVariables.variables);
-    Object.assign(
-      this.publishedVariableCollections,
-      publishedVariables.variableCollections
-    );
+    Object.assign(this.publishedVariableCollections, publishedVariables.variableCollections);
 
     return publishedVariables;
   }
@@ -256,13 +237,9 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
     let { hexColorToVariableMap, roundingToVariableMap, spacingToVariableMap } = opts;
 
-    const styleBucket =
-      opts?.styleBucket || FigmaCalculator.generateStyleBucket(styles);
+    const styleBucket = opts?.styleBucket || FigmaCalculator.generateStyleBucket(styles);
 
-    if (!styleBucket)
-      throw new Error(
-        "No style bucket, or array of styles provided to generate lint results"
-      );
+    if (!styleBucket) throw new Error("No style bucket, or array of styles provided to generate lint results");
 
     if (
       variables &&
@@ -272,41 +249,20 @@ export class FigmaCalculator extends FigmaDocumentParser {
     ) {
       // Create a map of hex colors to variables, if not passed
       if (!hexColorToVariableMap && colorVariableCollectionIds.length > 0) {
-        const colorVariableIds = getCollectionVariables(
-          colorVariableCollectionIds,
-          variableCollections
-        );
-        hexColorToVariableMap = createHexColorToVariableMap(
-          colorVariableIds,
-          variables,
-          variableCollections
-        );
+        const colorVariableIds = getCollectionVariables(colorVariableCollectionIds, variableCollections);
+        hexColorToVariableMap = createHexColorToVariableMap(colorVariableIds, variables, variableCollections);
       }
 
       // Create a map of rounding values to variables, if not passed
       if (!roundingToVariableMap && roundingVariableCollectionIds.length > 0) {
-        const roundingVariableIds = getCollectionVariables(
-          roundingVariableCollectionIds,
-          variableCollections
-        );
-        roundingToVariableMap = createRoundingToVariableMap(
-          roundingVariableIds,
-          variables,
-          variableCollections
-        );
+        const roundingVariableIds = getCollectionVariables(roundingVariableCollectionIds, variableCollections);
+        roundingToVariableMap = createRoundingToVariableMap(roundingVariableIds, variables, variableCollections);
       }
 
       // Create a map of spacing values to variables, if not passed
       if (!spacingToVariableMap && spacingVariableCollectionIds.length > 0) {
-        const spacingVariableIds = getCollectionVariables(
-          spacingVariableCollectionIds,
-          variableCollections
-        );
-        spacingToVariableMap = createSpacingToVariableMap(
-          spacingVariableIds,
-          variables,
-          variableCollections
-        );
+        const spacingVariableIds = getCollectionVariables(spacingVariableCollectionIds, variableCollections);
+        spacingToVariableMap = createSpacingToVariableMap(spacingVariableIds, variables, variableCollections);
       }
     }
 
@@ -327,10 +283,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
     const hiddenParentNodes: string[] = [];
 
     nodes.forEach((node) => {
-      if (
-        (node as FrameNode).visible === false &&
-        !allHiddenNodes.includes(node.id)
-      ) {
+      if ((node as FrameNode).visible === false && !allHiddenNodes.includes(node.id)) {
         hiddenParentNodes.push(node.id);
         // add all of the children as hidden nodes
         const subNodes = FigmaDocumentParser.FindAll(node, () => true);
@@ -370,8 +323,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
     nodes.forEach((node) => {
       if (node.type === "INSTANCE" && !allIgnoredNodes.includes(node.id)) {
         // REST API has componentId, Plugin API uses mainComponent.key
-        const componentKey =
-          (node as any).componentId || node.mainComponent?.key;
+        const componentKey = (node as any).componentId || node.mainComponent?.key;
 
         if (componentKey && ignoredComponentKeys.includes(componentKey)) {
           ignoredParentInstanceIds.push(node.id);
@@ -418,8 +370,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
     numLibraryNodes: number;
   } {
     // run through the page
-    if (!opts?.components)
-      throw new Error("No components provided to filter out library nodes");
+    if (!opts?.components) throw new Error("No components provided to filter out library nodes");
 
     const componentMap = generateComponentMap(opts?.components);
 
@@ -433,8 +384,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
     // check if a component has a mainComponent?
     const isLibraryComponent = (instanceNode: any) => {
       // if it's a web file, then check the componentId else the mainComponent property to get the key
-      const componentKey =
-        instanceNode.componentId || instanceNode.mainComponent?.key;
+      const componentKey = instanceNode.componentId || instanceNode.mainComponent?.key;
 
       if (!componentKey) {
         return false;
@@ -502,13 +452,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
       ...processedNodeOpts // The rest, ala ProcessedNodeOptions
     } = opts;
 
-    const {
-      allHiddenNodes,
-      allIgnoredNodes,
-      libraryNodes,
-      totalNodes,
-      processedNodes,
-    } = getProcessedNodes(
+    const { allHiddenNodes, allIgnoredNodes, libraryNodes, totalNodes, processedNodes } = getProcessedNodes(
       rootNode,
       components,
       allStyles,
@@ -630,16 +574,10 @@ export class FigmaCalculator extends FigmaDocumentParser {
           case "Full":
             {
               aggregates.checks[checkName]!.full += 1;
-              if (checkName === "Fill-Style" || checkName === "Fill-Variable")
-                counters.fills.full++;
-              else if (checkName === "Rounding-Variable")
-                counters.rounding.full++;
-              else if (checkName === "Spacing-Variable")
-                counters.spacing.full++;
-              else if (
-                checkName === "Stroke-Fill-Style" ||
-                checkName === "Stroke-Fill-Variable"
-              )
+              if (checkName === "Fill-Style" || checkName === "Fill-Variable") counters.fills.full++;
+              else if (checkName === "Rounding-Variable") counters.rounding.full++;
+              else if (checkName === "Spacing-Variable") counters.spacing.full++;
+              else if (checkName === "Stroke-Fill-Style" || checkName === "Stroke-Fill-Variable")
                 counters.strokes.full++;
               else if (checkName === "Text-Style") counters.text.full++;
             }
@@ -648,16 +586,10 @@ export class FigmaCalculator extends FigmaDocumentParser {
           case "Partial":
             {
               aggregates.checks[checkName]!.partial += 1;
-              if (checkName === "Fill-Style" || checkName === "Fill-Variable")
-                counters.fills.partial++;
-              else if (checkName === "Rounding-Variable")
-                counters.rounding.partial++;
-              else if (checkName === "Spacing-Variable")
-                counters.spacing.partial++;
-              else if (
-                checkName === "Stroke-Fill-Style" ||
-                checkName === "Stroke-Fill-Variable"
-              )
+              if (checkName === "Fill-Style" || checkName === "Fill-Variable") counters.fills.partial++;
+              else if (checkName === "Rounding-Variable") counters.rounding.partial++;
+              else if (checkName === "Spacing-Variable") counters.spacing.partial++;
+              else if (checkName === "Stroke-Fill-Style" || checkName === "Stroke-Fill-Variable")
                 counters.strokes.partial++;
               else if (checkName === "Text-Style") counters.text.partial++;
             }
@@ -666,16 +598,10 @@ export class FigmaCalculator extends FigmaDocumentParser {
           case "None":
             {
               aggregates.checks[checkName]!.none += 1;
-              if (checkName === "Fill-Style" || checkName === "Fill-Variable")
-                counters.fills.none++;
-              else if (checkName === "Rounding-Variable")
-                counters.rounding.none++;
-              else if (checkName === "Spacing-Variable")
-                counters.spacing.none++;
-              else if (
-                checkName === "Stroke-Fill-Style" ||
-                checkName === "Stroke-Fill-Variable"
-              )
+              if (checkName === "Fill-Style" || checkName === "Fill-Variable") counters.fills.none++;
+              else if (checkName === "Rounding-Variable") counters.rounding.none++;
+              else if (checkName === "Spacing-Variable") counters.spacing.none++;
+              else if (checkName === "Stroke-Fill-Style" || checkName === "Stroke-Fill-Variable")
                 counters.strokes.none++;
               else if (checkName === "Text-Style") counters.text.none++;
             }
@@ -724,10 +650,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
     return aggregates;
   }
 
-  getAdoptionPercent(
-    aggregates: AggregateCounts[],
-    opts?: AdoptionCalculationOptions
-  ) {
+  getAdoptionPercent(aggregates: AggregateCounts[], opts?: AdoptionCalculationOptions) {
     const allTotals = {
       totalNodesOnPage: 0,
       totalNodesInLibrary: 0,
@@ -735,8 +658,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
     };
 
     for (const counts of aggregates) {
-      const { totalNodes, libraryNodes, hiddenNodes, ignoredNodes, checks } =
-        counts;
+      const { totalNodes, libraryNodes, hiddenNodes, ignoredNodes, checks } = counts;
 
       allTotals.totalNodesOnPage += totalNodes - hiddenNodes - ignoredNodes;
       allTotals.totalNodesInLibrary += libraryNodes;
@@ -751,8 +673,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
     }
 
     const adoptionPercent = makePercent(
-      (allTotals.totalNodesInLibrary + allTotals.totalMatchingText) /
-        allTotals.totalNodesOnPage
+      (allTotals.totalNodesInLibrary + allTotals.totalMatchingText) / allTotals.totalNodesOnPage
     );
 
     return adoptionPercent;
@@ -762,10 +683,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
    * Get the percents of text style usage in files
    * @param processedNodes - array of nodes that have been processed
    */
-  getTextStylePercentage(
-    processedNodes: AggregateCounts[],
-    opts?: AdoptionCalculationOptions
-  ): LintCheckPercent {
+  getTextStylePercentage(processedNodes: AggregateCounts[], opts?: AdoptionCalculationOptions): LintCheckPercent {
     return getLintCheckPercent("Text-Style", processedNodes, {
       includePartials: opts?.includePartialText || false,
     });
@@ -775,10 +693,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
    * Get the percents of fill style usage in files
    * @param processedNodes - array of nodes that have been processed
    */
-  getFillStylePercent(
-    processedNodes: AggregateCounts[],
-    opts?: AdoptionCalculationOptions
-  ): LintCheckPercent {
+  getFillStylePercent(processedNodes: AggregateCounts[], opts?: AdoptionCalculationOptions): LintCheckPercent {
     return getLintCheckPercent("Fill-Style", processedNodes, {
       includePartials: opts?.includePartialFills || false,
     });
@@ -828,9 +743,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
         for (const project of projects) {
           const { pages } = teams[team][project];
 
-          const allProjectProcessedNodes = pages.map(
-            (page) => page.pageAggregates
-          );
+          const allProjectProcessedNodes = pages.map((page) => page.pageAggregates);
 
           // initialize the project and page stats structure
           if (!processedPageStats[team]) {
@@ -845,19 +758,10 @@ export class FigmaCalculator extends FigmaDocumentParser {
                 name: page.pageName,
                 key: page.file.key,
                 last_modified: page.file.last_modified,
-                adoptionPercent: this.getAdoptionPercent(
-                  [page.pageAggregates],
-                  opts
-                ),
+                adoptionPercent: this.getAdoptionPercent([page.pageAggregates], opts),
                 lintPercentages: {
-                  "Text-Style": this.getTextStylePercentage(
-                    [page.pageAggregates],
-                    opts
-                  ),
-                  "Fill-Style": this.getFillStylePercent(
-                    [page.pageAggregates],
-                    opts
-                  ),
+                  "Text-Style": this.getTextStylePercentage([page.pageAggregates], opts),
+                  "Fill-Style": this.getFillStylePercent([page.pageAggregates], opts),
                 },
               };
             }),
@@ -865,25 +769,14 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
           //  rollup the adoption percentages to project level stats
           processedProjectStats[team][project] = {
-            adoptionPercent: this.getAdoptionPercent(
-              allProjectProcessedNodes,
-              opts
-            ),
+            adoptionPercent: this.getAdoptionPercent(allProjectProcessedNodes, opts),
             lintPercentages: {
-              "Text-Style": this.getTextStylePercentage(
-                allProjectProcessedNodes,
-                opts
-              ),
-              "Fill-Style": this.getFillStylePercent(
-                allProjectProcessedNodes,
-                opts
-              ),
+              "Text-Style": this.getTextStylePercentage(allProjectProcessedNodes, opts),
+              "Fill-Style": this.getFillStylePercent(allProjectProcessedNodes, opts),
             },
           };
 
-          teamProcessedNodes = teamProcessedNodes.concat(
-            allProjectProcessedNodes
-          );
+          teamProcessedNodes = teamProcessedNodes.concat(allProjectProcessedNodes);
         }
 
         // rollup the adoption percentages to the team level stats

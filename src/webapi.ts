@@ -30,9 +30,7 @@ export class FigmaAPIHelper {
     FigmaAPIHelper.API_TOKEN = token;
   }
 
-  static async getTeamProjects(
-    teamIds: string[]
-  ): Promise<FigmaProjectDetails[]> {
+  static async getTeamProjects(teamIds: string[]): Promise<FigmaProjectDetails[]> {
     let projects: FigmaProjectDetails[] = [];
     for (const teamId of teamIds) {
       const resp = await axios.get<FigmaTeamProjectsResponse>(`${BASE_URL}/teams/${teamId}/projects`, {
@@ -75,9 +73,9 @@ export class FigmaAPIHelper {
   static async getImages(
     fileKey: string,
     imageIds: string[],
-    format: 'jpg' | 'png' | 'svg' | 'pdf'
+    format: "jpg" | "png" | "svg" | "pdf"
   ): Promise<FigmaImages> {
-    const resp = await axios.get(`${BASE_URL}/images/${fileKey}?format=${format}&ids=${imageIds.join(',')}`, {
+    const resp = await axios.get(`${BASE_URL}/images/${fileKey}?format=${format}&ids=${imageIds.join(",")}`, {
       headers: {
         "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
       },
@@ -96,26 +94,21 @@ export class FigmaAPIHelper {
     return data;
   }
 
-  static async getTeamComponentSets(
-    teamId: string
-  ): Promise<FigmaTeamComponent[]> {
+  static async getTeamComponentSets(teamId: string): Promise<FigmaTeamComponent[]> {
     let components: FigmaTeamComponent[] = [];
 
     let nextCursor = undefined;
 
     do {
-      const resp = await axios.get(
-        `${BASE_URL}/teams/${teamId}/component_sets`,
-        {
-          headers: {
-            "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
-          },
-          params: {
-            after: nextCursor,
-            page_size: 10000,
-          },
-        }
-      );
+      const resp = await axios.get(`${BASE_URL}/teams/${teamId}/component_sets`, {
+        headers: {
+          "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
+        },
+        params: {
+          after: nextCursor,
+          page_size: 10000,
+        },
+      });
 
       const data = resp.data as any;
       const metadata = data.meta;
@@ -123,18 +116,14 @@ export class FigmaAPIHelper {
       nextCursor = metadata.cursor?.after;
 
       if (!data.error && metadata.component_sets) {
-        components = components.concat(
-          metadata.component_sets as FigmaTeamComponent[]
-        );
+        components = components.concat(metadata.component_sets as FigmaTeamComponent[]);
       }
     } while (nextCursor);
 
     return components;
   }
 
-  static async getTeamComponents(
-    teamId: string
-  ): Promise<FigmaTeamComponent[]> {
+  static async getTeamComponents(teamId: string): Promise<FigmaTeamComponent[]> {
     let components: FigmaTeamComponent[] = [];
 
     let nextCursor = undefined;
@@ -156,9 +145,7 @@ export class FigmaAPIHelper {
       nextCursor = metadata.cursor?.after;
 
       if (!data.error && metadata.components) {
-        components = components.concat(
-          metadata.components as FigmaTeamComponent[]
-        );
+        components = components.concat(metadata.components as FigmaTeamComponent[]);
       }
     } while (nextCursor);
 
@@ -220,9 +207,7 @@ export class FigmaAPIHelper {
       });
       const data = resp.data as any;
       if (!data.error && data.meta.components) {
-        components = components.concat(
-          data.meta.components as FigmaTeamComponent[]
-        );
+        components = components.concat(data.meta.components as FigmaTeamComponent[]);
       }
     }
     return components;
@@ -273,7 +258,7 @@ export class FigmaAPIHelper {
     return {
       variables: resp.data.meta?.variables,
       variableCollections: resp.data.meta?.variableCollections,
-    }
+    };
   }
 
   static async getFilePublishedVariables(fileKey: string): Promise<{
@@ -289,7 +274,7 @@ export class FigmaAPIHelper {
     return {
       variables: resp.data.meta?.variables,
       variableCollections: resp.data.meta?.variableCollections,
-    }
+    };
   }
 
   static async getNodeDetails(fileKey: string, nodeIds: string[]) {
@@ -303,6 +288,19 @@ export class FigmaAPIHelper {
     });
     const data = resp.data as { nodes: { [key: string]: any } };
 
+    return data;
+  }
+
+  static async getDevResources(fileKey: string, nodeId?: string): Promise<any> {
+    const resp = await axios.get(`${BASE_URL}/files/${fileKey}/dev_resources`, {
+      headers: {
+        "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
+      },
+      params: {
+        node_id: nodeId,
+      },
+    });
+    const data = resp.data as FigmaFile;
     return data;
   }
 

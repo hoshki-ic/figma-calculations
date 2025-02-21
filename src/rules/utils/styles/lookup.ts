@@ -30,7 +30,7 @@ export default function getStyleLookupMatches(
       styleType = "FILL";
     }
 
-    if (stylesLookup[styleType][key]) {
+    if (stylesLookup[styleType] && stylesLookup[styleType][key]) {
       // a list of potential styles that match
       let possibleStyles = stylesLookup[styleType][key];
 
@@ -39,10 +39,7 @@ export default function getStyleLookupMatches(
         if (prop.matchType === "includes") {
           possibleStyles = possibleStyles.filter((style) => {
             // depending on the environment read the right path from the node
-            const pathToUse =
-              typeof figma === "undefined"
-                ? prop.nodePath
-                : prop.figmaPath || prop.nodePath;
+            const pathToUse = typeof figma === "undefined" ? prop.nodePath : prop.figmaPath || prop.nodePath;
             const targetValue = jp.value(targetNode, pathToUse);
             const styleValue = jp.value(style.nodeDetails, prop.stylePath);
 
