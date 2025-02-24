@@ -7,7 +7,18 @@ import { FIGMA_TOKEN } from "./token";
 const figmaCalculator = new FigmaCalculator();
 
 const STYLE_TEAM_ID = "740326391796487610";
-const TEAM_IDS = ["1080294811112632949"];
+const TEAM_IDS = [
+  "740326391796487610",
+  "810275658963931110",
+  "1265745180296222701",
+  "740987236793396428",
+  "1288143691462128259",
+  "1062883821222503942",
+  "1332827263422764017",
+  "1382421006239309196",
+  "1080294811112632949",
+  "1051025699358218721",
+];
 const onlyDevStatus = true; // Toggle this to enable/disable dev status filtering
 
 // used to fetch styles and components
@@ -49,15 +60,15 @@ const doWork = async () => {
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
-    console.log("File Name: " + file.name);
+
     try {
       await figmaCalculator.fetchCloudDocument(file.key);
     } catch (ex) {
-      console.log(`Failed to fetch ${file.key}`);
+      console.log(`Failed to fetch ${file.key}: ${file.name}`);
       continue;
     }
 
-    console.log(`Processing file`);
+    console.log(`Processing file ${i + 1} of ${files.length}: ${file.name}`);
 
     // run through all of the pages and process them
     for (const page of figmaCalculator.getAllPages()) {
@@ -104,7 +115,6 @@ const doWork = async () => {
 
   const teamBreakdown = figmaCalculator.getBreakDownByTeams(allPages);
 
-  // Calculate library component adoption for all pages
   const libraryAdoption = getLibraryComponentAdoption(allPages.map((page) => page.pageAggregates));
 
   console.log("Library Component Adoption:", {
