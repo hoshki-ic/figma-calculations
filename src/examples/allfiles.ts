@@ -8,7 +8,7 @@ const figmaCalculator = new FigmaCalculator();
 
 const STYLE_TEAM_ID = "740326391796487610";
 const TEAM_IDS = [
-  "740326391796487610",
+  // "740326391796487610",
   "810275658963931110",
   "1265745180296222701",
   "740987236793396428",
@@ -19,7 +19,7 @@ const TEAM_IDS = [
   "1080294811112632949",
   "1051025699358218721",
 ];
-const onlyDevStatus = true; // Toggle this to enable/disable dev status filtering
+const onlyDevStatus = false; // Toggle this to enable/disable dev status filtering
 
 // used to fetch styles and components
 figmaCalculator.setAPIToken(FIGMA_TOKEN);
@@ -58,6 +58,10 @@ const doWork = async () => {
 
   console.log("Total File Count:", files.length);
 
+  // Initialize counters for this file
+  let totalPages = 0;
+  let devReadyPages = 0;
+
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
 
@@ -72,6 +76,7 @@ const doWork = async () => {
 
     // run through all of the pages and process them
     for (const page of figmaCalculator.getAllPages()) {
+      totalPages++;
       let pageToProcess = page;
 
       if (onlyDevStatus) {
@@ -86,6 +91,7 @@ const doWork = async () => {
           continue;
         }
 
+        devReadyPages++;
         pageToProcess = {
           ...page,
           children: designWithDevStatus,
@@ -122,6 +128,8 @@ const doWork = async () => {
     libraryNodes: libraryAdoption.library,
     percentage: libraryAdoption.percentage + "%",
   });
+  console.log("Total Pages:", totalPages);
+  console.log("Dev Ready Pages:", devReadyPages);
   console.log("Team Breakdown:", JSON.stringify(teamBreakdown, null, 2));
 };
 
