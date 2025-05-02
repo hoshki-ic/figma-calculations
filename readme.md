@@ -59,8 +59,8 @@ const doWork = async () => {
       pageDetails.documentName = file.docuemntName;
       pageDetails.processedNodes = processedNodes;
     }
-  } 
-    
+  }
+
   const allProcessedNodes = allFileNodes.map(
     (details) => details.processedNodes
   );
@@ -69,11 +69,31 @@ const doWork = async () => {
   const totalAdoption = figmaCalculator.getAdoptionPercent(allProcessedNodes);
   const textStylePercents =
     figmaCalculator.getTextStylePercentaget(allProcessedNodes);
-    
-    
+
+
   const teamBreakdown = figmaCalculator.calculateTeamPercents(allFileNodes);
 };
 ```
+
+### Automation with GitHub Actions
+
+This repository includes a GitHub Actions workflow that automates the Figma calculations process and exports the data to another repository. The workflow:
+
+1. Runs weekly (every Monday at 2:00 AM)
+2. Executes the calculation script
+3. Copies the output JSON to a target repository
+
+#### Required Environment Variables
+
+To use this automation, the following environment variables need to be configured as GitHub repository secrets:
+
+- `FIGMA_API_TOKEN`: Your Figma API token
+- `FIGMA_STYLE_TEAM_ID`: The Figma style team ID
+- `FIGMA_TEAM_IDS`: Comma-separated list of Figma team IDs
+- `FIGMA_DESIGN_SYSTEM_FILE_KEY`: The Figma design system file key
+- `TARGET_REPO_PAT`: A Personal Access Token with write permissions to the target repository
+
+See the `.github/README.md` file for detailed setup instructions.
 
 ### How we calculate adoption
 
